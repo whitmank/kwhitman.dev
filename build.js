@@ -95,7 +95,12 @@ function renderProjects() {
   const body = `<section class="posts-list">
 <h1>Projects</h1>
 <div class="posts-container">
-<p>coming soon</p>
+<div class="post-preview">
+<h2>audio-comments</h2>
+</div>
+<div class="post-preview">
+<h2>text-globe</h2>
+</div>
 </div>
 </section>`;
   return layout({ title: `Projects — ${SITE_TITLE}`, body });
