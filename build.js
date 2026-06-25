@@ -43,6 +43,7 @@ function layout({ title, body }) {
 <header>
 <nav>
 <a href="/" class="site-title">${esc(SITE_TITLE)}</a>
+<a href="/blog" class="nav-link">/blog</a>
 </nav>
 </header>
 <main>
