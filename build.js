@@ -40,15 +40,18 @@ function layout({ title, body }) {
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-<nav>
+<div class="layout">
+<aside class="sidebar">
 <a href="/" class="site-title">${esc(SITE_TITLE)}</a>
+<nav>
 <a href="/blog" class="nav-link">/blog</a>
+<a href="/projects" class="nav-link">/projects</a>
 </nav>
-</header>
+</aside>
 <main>
 ${body}
 </main>
+</div>
 </body>
 </html>
 `;
@@ -70,9 +73,20 @@ ${post.html}
   return layout({ title: `${post.title} — ${SITE_TITLE}`, body });
 }
 
-// Home page: just the site header, no content.
+// Home page: just the sidebar, empty main.
 function renderHome() {
   return layout({ title: SITE_TITLE, body: '' });
+}
+
+// Projects page at /projects: placeholder until there's content.
+function renderProjects() {
+  const body = `<section class="posts-list">
+<h1>Projects</h1>
+<div class="posts-container">
+<p>coming soon</p>
+</div>
+</section>`;
+  return layout({ title: `Projects — ${SITE_TITLE}`, body });
 }
 
 // Blog index at /blog: every post, newest first.
@@ -99,6 +113,7 @@ function build() {
   fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(path.join(DIST, 'posts'), { recursive: true });
   fs.mkdirSync(path.join(DIST, 'blog'), { recursive: true });
+  fs.mkdirSync(path.join(DIST, 'projects'), { recursive: true });
 
   const files = fs.existsSync(POSTS_DIR)
     ? fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'))
@@ -126,6 +141,7 @@ function build() {
   }
   fs.writeFileSync(path.join(DIST, 'index.html'), renderHome());
   fs.writeFileSync(path.join(DIST, 'blog', 'index.html'), renderBlog(posts));
+  fs.writeFileSync(path.join(DIST, 'projects', 'index.html'), renderProjects());
   fs.copyFileSync(path.join(ROOT, 'style.css'), path.join(DIST, 'style.css'));
 
   console.log(`Built ${posts.length} post(s) → dist/`);

@@ -22,9 +22,13 @@ write posts/*.md  →  node build.js  →  dist/ (flat HTML)  →  Cloudflare Pa
 
 ## Scope (v1)
 
+A persistent left sidebar (built in `layout()`) carries the `kwhitman.dev` title
+and the nav links (`/blog`, `/projects`) on every page.
+
 In:
-- `/` — home page, just the site header (no content yet).
+- `/` — home page; sidebar only, empty main.
 - `/blog` — every post listed newest-first (title + date), each a link.
+- `/projects` — placeholder page (heading only) for now.
 - One HTML page per post at `/posts/<slug>.html`.
 
 Deliberately out (revisit only if a real need appears): RSS, tags/categories,
