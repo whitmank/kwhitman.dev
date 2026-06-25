@@ -74,15 +74,17 @@ Algorithm:
    `dist/index.html`.
 4. Copy `style.css` to `dist/style.css`.
 
-Templates are inline template-literal functions in `build.js` (`renderPost`,
-`renderIndex`) — no template-engine dependency. Each template links the
-stylesheet in its `<head>` (`<link rel="stylesheet" href="/style.css">`), so all
-styling lives in the editable `style.css` file. It starts near-zero and can grow:
+Templates are inline template-literal functions in `build.js` (`layout`,
+`renderPost`, `renderIndex`) — no template-engine dependency. `layout` provides
+the shared shell (site-title header, `<main>`, footer) and links the stylesheet
+in `<head>` (`<link rel="stylesheet" href="/style.css">`). The markup uses
+class names (`.posts-list`, `.post-preview`, `.post-header`, `.post-content`,
+`.post-footer`, `.site-title`) that the stylesheet targets.
 
-```css
-body { max-width: 40rem; margin: 2rem auto; padding: 0 1rem;
-       font-family: system-ui, sans-serif; line-height: 1.5; }
-```
+All styling lives in the editable `style.css` — a clean blog look ported from
+the earlier `kwhitman.xyz` site: 700px column, system fonts, `#333` text,
+`#0066cc` link accents, bordered footer. The interactive sort-toggle from that
+site was intentionally left out to keep v1 minimal (static newest-first order).
 
 ## Commands
 

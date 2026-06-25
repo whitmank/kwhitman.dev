@@ -5,7 +5,8 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "publish": "sh publish.sh"
   },
   "author": "Karter (with Claude Opus 4.8)",
   "license": "MIT",

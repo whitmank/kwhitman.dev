@@ -28,7 +28,8 @@ function isoDate(date) {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
-// Shared page shell. All styling lives in /style.css.
+// Shared page shell: site-title header, main content, footer.
+// All styling lives in /style.css.
 function layout({ title, body }) {
   return `<!doctype html>
 <html lang="en">
@@ -39,31 +40,53 @@ function layout({ title, body }) {
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<header>
+<nav>
+<a href="/" class="site-title">${esc(SITE_TITLE)}</a>
+</nav>
+</header>
+<main>
 ${body}
+</main>
+<footer>
+<p>&copy; 2026</p>
+</footer>
 </body>
 </html>
 `;
 }
 
 function renderPost(post) {
-  const body = `<article>
+  const body = `<article class="post">
+<header class="post-header">
 <h1>${esc(post.title)}</h1>
 <time datetime="${isoDate(post.date)}">${isoDate(post.date)}</time>
+</header>
+<div class="post-content">
 ${post.html}
-</article>
-<p><a href="/">← all posts</a></p>`;
+</div>
+<footer class="post-footer">
+<a href="/">← Back to posts</a>
+</footer>
+</article>`;
   return layout({ title: `${post.title} — ${SITE_TITLE}`, body });
 }
 
 function renderIndex(posts) {
   const items = posts.map(p =>
-    `<li><a href="/posts/${p.slug}.html">${esc(p.title)}</a> ` +
-    `<time datetime="${isoDate(p.date)}">${isoDate(p.date)}</time></li>`
+    `<div class="post-preview">
+<a href="/posts/${p.slug}.html">
+<h2>${esc(p.title)}</h2>
+<time datetime="${isoDate(p.date)}">${isoDate(p.date)}</time>
+</a>
+</div>`
   ).join('\n');
-  const body = `<h1>${esc(SITE_TITLE)}</h1>
-<ul>
+  const body = `<section class="posts-list">
+<h1>Posts</h1>
+<div class="posts-container">
 ${items}
-</ul>`;
+</div>
+</section>`;
   return layout({ title: SITE_TITLE, body });
 }
 
