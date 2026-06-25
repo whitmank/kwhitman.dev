@@ -14,7 +14,7 @@ const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 const ROOT = __dirname;
 const POSTS_DIR = path.join(ROOT, 'posts');
 const DIST = path.join(ROOT, 'dist');
-const SITE_TITLE = 'Programming with Natural Language';
+const SITE_TITLE = 'kwhitman.dev';
 
 // Escape text destined for HTML.
 function esc(s) {

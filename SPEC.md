@@ -1,9 +1,9 @@
 <!-- Authored by Karter with Claude Opus 4.8 -->
 
-# Programming with Natural Language — devlog spec
+# kwhitman.dev — devlog spec
 
-A devlog/blog whose subject is what can be built using only language models and
-agent harnesses. The build tool is itself an exhibit of that thesis: a small,
+A devlog/blog about what can be built using only language models and agent
+harnesses. The build tool is itself an exhibit of that thesis: a small,
 hand-authored generator a reader can open and understand.
 
 Guiding value: **extreme simplicity.** When a feature is in question, leave it
