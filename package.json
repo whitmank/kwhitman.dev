@@ -1,0 +1,16 @@
+{
+  "name": "kwhitman-dev",
+  "version": "1.0.0",
+  "description": "Programming with Natural Language — a devlog. Authored by Karter with Claude Opus 4.8.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "author": "Karter (with Claude Opus 4.8)",
+  "license": "MIT",
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^14.1.0"
+  }
+}

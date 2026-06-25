@@ -1,0 +1,10 @@
+/* Programming with Natural Language — styles */
+/* Authored by Karter with Claude Opus 4.8 */
+
+body {
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
