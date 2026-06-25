@@ -23,8 +23,9 @@ write posts/*.md  →  node build.js  →  dist/ (flat HTML)  →  Cloudflare Pa
 ## Scope (v1)
 
 In:
-- `index.html` — every post listed newest-first (title + date), each a link.
-- One HTML page per post.
+- `/` — home page, just the site header (no content yet).
+- `/blog` — every post listed newest-first (title + date), each a link.
+- One HTML page per post at `/posts/<slug>.html`.
 
 Deliberately out (revisit only if a real need appears): RSS, tags/categories,
 draft flag, search, pagination, comments.
@@ -39,8 +40,10 @@ kwhitman.dev/
 ├── build.js                   # the generator (the exhibit)
 ├── package.json
 └── dist/                      # build output — gitignored, served by host
-    ├── index.html
+    ├── index.html             # home (header only)
     ├── style.css              # copied from project root
+    ├── blog/
+    │   └── index.html         # the posts list, served at /blog
     └── posts/
         └── hello-world.html
 ```

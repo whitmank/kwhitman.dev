@@ -63,13 +63,19 @@ function renderPost(post) {
 ${post.html}
 </div>
 <footer class="post-footer">
-<a href="/">← Back to posts</a>
+<a href="/blog">← Back to posts</a>
 </footer>
 </article>`;
   return layout({ title: `${post.title} — ${SITE_TITLE}`, body });
 }
 
-function renderIndex(posts) {
+// Home page: just the site header, no content.
+function renderHome() {
+  return layout({ title: SITE_TITLE, body: '' });
+}
+
+// Blog index at /blog: every post, newest first.
+function renderBlog(posts) {
   const items = posts.map(p =>
     `<div class="post-preview">
 <a href="/posts/${p.slug}.html">
@@ -84,13 +90,14 @@ function renderIndex(posts) {
 ${items}
 </div>
 </section>`;
-  return layout({ title: SITE_TITLE, body });
+  return layout({ title: `Blog — ${SITE_TITLE}`, body });
 }
 
 function build() {
   // Start from a clean dist/ every time.
   fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(path.join(DIST, 'posts'), { recursive: true });
+  fs.mkdirSync(path.join(DIST, 'blog'), { recursive: true });
 
   const files = fs.existsSync(POSTS_DIR)
     ? fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'))
@@ -116,7 +123,8 @@ function build() {
       renderPost(post),
     );
   }
-  fs.writeFileSync(path.join(DIST, 'index.html'), renderIndex(posts));
+  fs.writeFileSync(path.join(DIST, 'index.html'), renderHome());
+  fs.writeFileSync(path.join(DIST, 'blog', 'index.html'), renderBlog(posts));
   fs.copyFileSync(path.join(ROOT, 'style.css'), path.join(DIST, 'style.css'));
 
   console.log(`Built ${posts.length} post(s) → dist/`);
