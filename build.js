@@ -73,9 +73,21 @@ ${post.html}
   return layout({ title: `${post.title} — ${SITE_TITLE}`, body });
 }
 
-// Home page: just the sidebar, empty main.
+// Home page: redirect to /blog for now (keeps the / route alive).
 function renderHome() {
-  return layout({ title: SITE_TITLE, body: '' });
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url=/blog">
+<link rel="canonical" href="/blog">
+<title>${esc(SITE_TITLE)}</title>
+</head>
+<body>
+<p>Redirecting to <a href="/blog">/blog</a>…</p>
+</body>
+</html>
+`;
 }
 
 // Projects page at /projects: placeholder until there's content.

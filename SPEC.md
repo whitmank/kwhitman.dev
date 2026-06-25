@@ -26,7 +26,7 @@ A persistent left sidebar (built in `layout()`) carries the `kwhitman.dev` title
 and the nav links (`/blog`, `/projects`) on every page.
 
 In:
-- `/` — home page; sidebar only, empty main.
+- `/` — redirects to `/blog` for now (meta refresh).
 - `/blog` — every post listed newest-first (title + date), each a link.
 - `/projects` — placeholder page (heading only) for now.
 - One HTML page per post at `/posts/<slug>.html`.
