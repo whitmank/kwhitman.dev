@@ -32,14 +32,6 @@ main {
   min-height: 60vh;
 }
 
-footer {
-  margin-top: 4rem;
-  padding-top: 2rem;
-  border-top: 1px solid #eee;
-  color: #666;
-  font-size: 0.875rem;
-}
-
 /* Posts list */
 .posts-list h1 {
   margin-bottom: 2rem;
