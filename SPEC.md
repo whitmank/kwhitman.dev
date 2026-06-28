@@ -22,16 +22,17 @@ write user/**/*.md  →  node build.js  →  dist/ (flat HTML)  →  Cloudflare 
 
 ## Scope (v1)
 
-A persistent left sidebar (built in `layout()`) carries the `kwhitman.dev` title
-and the nav links (`/blog`, `/projects`) on every page.
+The site mirrors the `user/` folder like a file browser: every subfolder of
+`user/` is a **collection** rendered at a route named after it. A persistent left
+sidebar (built in `layout()`) carries the `kwhitman.dev` title and one nav link
+per collection (`/blog`, `/projects`, …) on every page.
 
 In:
-- `/` — redirects to `/blog` for now (meta refresh).
-- `/blog` — every post listed newest-first (title + date), each a link.
-- `/projects` — every project listed (title), each a link; project bodies are
+- `/` — file-browser root: lists the top-level `user/` folders, each a link.
+- `/<folder>` — every entry in that collection listed newest-first (title +
+  optional date), each a link. Today: `/blog` (posts) and `/projects`.
+- One HTML page per markdown file at `/<folder>/<slug>.html`. Project bodies are
   placeholder ("coming soon") for now.
-- One HTML page per post at `/posts/<slug>.html` and per project at
-  `/projects/<slug>.html`.
 
 Deliberately out (revisit only if a real need appears): RSS, tags/categories,
 draft flag, search, pagination, comments.
@@ -40,20 +41,20 @@ draft flag, search, pagination, comments.
 
 ```
 kwhitman.dev/
-├── user/                      # all hand-authored content
-│   ├── posts/                 # one markdown file per post
+├── user/                      # all hand-authored content; each folder = a route
+│   ├── post-template.md       # loose top-level file → ignored, never rendered
+│   ├── blog/                  # one markdown file per post → served at /blog
 │   │   └── hello-world.md
-│   └── projects/              # one markdown file per project
+│   └── projects/              # one markdown file per project → served at /projects
 │       └── audio-comments.md
 ├── style.css                  # site styles — edit here as the site grows
 ├── build.js                   # the generator (the exhibit)
 ├── package.json
 └── dist/                      # build output — gitignored, served by host
-    ├── index.html             # home (redirects to /blog)
+    ├── index.html             # file-browser root, listing the user/ folders
     ├── style.css              # copied from project root
     ├── blog/
-    │   └── index.html         # the posts list, served at /blog
-    ├── posts/
+    │   ├── index.html         # the posts list, served at /blog
     │   └── hello-world.html
     └── projects/
         ├── index.html         # the projects list, served at /projects
@@ -62,13 +63,13 @@ kwhitman.dev/
 
 ## Entry format
 
-Content is organized into **collections** — folders under `user/`, one per
-content type (`posts`, `projects`, …). Each collection is one row in the
-`COLLECTIONS` array in `build.js`; adding a content type means adding a row, no
-other code changes.
+Content is organized into **collections** — the subfolders of `user/`, one per
+content type (`blog`, `projects`, …). Collections are discovered at build time;
+adding a content type means adding a folder under `user/`, no code changes. The
+folder name becomes the route (`/<folder>`) and the heading (title-cased).
 
-Within a collection, the filename is the URL slug: `user/posts/hello-world.md` →
-`/posts/hello-world.html`. `title` is required; `date` (in frontmatter, keeps
+Within a collection, the filename is the URL slug: `user/blog/hello-world.md` →
+`/blog/hello-world.html`. `title` is required; `date` (in frontmatter, keeps
 URLs clean) is optional — it drives newest-first sort and the displayed date, and
 undated entries (current projects) sort last with no date shown.
 
@@ -87,18 +88,19 @@ Dependencies — two, both small and standard:
 - `markdown-it` — markdown → HTML
 - `gray-matter` — parse frontmatter
 
-Algorithm — for each collection in `COLLECTIONS`:
-1. Read every `.md` in `user/<src>/` (`loadCollection`).
-2. For each: split frontmatter/body with gray-matter, render body with
-   markdown-it, slug = filename without `.md`, sort entries by `date` descending
-   (undated last).
-3. Wrap each entry in the entry template, write `dist/<pageDir>/<slug>.html`;
-   render the collection's index and write `dist/<indexDir>/index.html`.
-4. Write `dist/index.html` (home redirect) and copy `style.css` to
+Algorithm:
+1. `discoverCollections()` — list the subfolders of `user/`, alphabetically.
+   Loose top-level files (e.g. `post-template.md`) and dot-folders are skipped.
+2. For each collection, `loadCollection` reads every `.md` in `user/<name>/`:
+   split frontmatter/body with gray-matter, render body with markdown-it,
+   slug = filename without `.md`, sort entries by `date` descending (undated last).
+3. Wrap each entry in the entry template, write `dist/<name>/<slug>.html`;
+   render the collection's index and write `dist/<name>/index.html`.
+4. Write `dist/index.html` (file-browser root) and copy `style.css` to
    `dist/style.css`.
 
 Templates are inline template-literal functions in `build.js` (`layout`,
-`renderEntry`, `renderIndex`) — no template-engine dependency. `layout` provides
+`renderHome`, `renderEntry`, `renderIndex`) — no template-engine dependency. `layout` provides
 the shared shell (site-title header, `<main>`, footer) and links the stylesheet
 in `<head>` (`<link rel="stylesheet" href="/style.css">`). The markup uses
 class names (`.posts-list`, `.post-preview`, `.post-header`, `.post-content`,
@@ -126,7 +128,7 @@ folder, so the host is replaceable without touching the generator.
 
 ## Writing a new post
 
-1. Create `user/posts/<slug>.md` with `title` + `date` frontmatter (a project is
+1. Create `user/blog/<slug>.md` with `title` + `date` frontmatter (a project is
    the same under `user/projects/`, where `date` is optional).
 2. Commit and push — Cloudflare rebuilds and deploys.
    (Or `npm run build` and preview locally first.)

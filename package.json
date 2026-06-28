@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "node build.js",
+    "dev": "node dev.js",
     "publish": "sh publish.sh"
   },
   "author": "Karter (with Claude Opus 4.8)",

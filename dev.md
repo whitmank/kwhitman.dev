@@ -11,20 +11,28 @@ npm install        # install build deps (markdown-it, gray-matter)
 ## Develop locally
 
 ```sh
-npm run build      # render user/**/*.md into dist/
-npx serve dist     # serve dist/ at http://localhost:3000
+npm run dev        # build, serve at http://localhost:3000, rebuild + reload on change
 ```
 
-There's no live-reload. After editing a post or the styles, re-run
-`npm run build` and refresh the browser. (Leave `npx serve dist` running in its
-own terminal.)
+`npm run dev` runs `dev.js` — a zero-dependency dev server (tooling, not part of
+the site). It builds `dist/`, serves it, and watches `user/`, `style.css`, and
+`build.js`; any change rebuilds and the browser reloads itself. Just edit and
+save. Port 3000 is the default; override with `PORT=4321 npm run dev` if it's
+taken.
+
+For a one-off build without the watcher:
+
+```sh
+npm run build      # render user/**/*.md into dist/
+npx serve dist     # serve dist/ (no rebuild, no live-reload)
+```
 
 ## Write a post
 
-1. Copy `user/post-template.md` into `user/posts/` and rename it to your slug
-   (e.g. `user/posts/my-post.md` → served at `/posts/my-post.html`).
+1. Copy `user/post-template.md` into `user/blog/` and rename it to your slug
+   (e.g. `user/blog/my-post.md` → served at `/blog/my-post.html`).
 2. Edit the frontmatter (`title`, `date`) and body.
-3. `npm run build` and refresh to preview.
+3. With `npm run dev` running, just save — it rebuilds and the browser reloads.
 
 ## Publish to live
 

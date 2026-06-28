@@ -1,8 +1,10 @@
 // Programming with Natural Language — static site generator
 // Authored by Karter with Claude Opus 4.8
 //
-// Reads posts/*.md, renders each to dist/posts/<slug>.html, and writes an
-// index listing every post newest-first. The whole site is built by this file.
+// The site mirrors the user/ folder like a file browser. Every subfolder of
+// user/ is a collection served at /<folder> (its index) and /<folder>/<slug>.html
+// (one page per markdown file). Routes, headings, and the sidebar tree are all
+// derived from folder names — nothing is hardcoded. The whole site is built here.
 
 const fs = require('fs');
 const path = require('path');
@@ -16,25 +18,21 @@ const USER_DIR = path.join(ROOT, 'user'); // all hand-authored content lives her
 const DIST = path.join(ROOT, 'dist');
 const SITE_TITLE = 'kwhitman.dev';
 
-// Content collections. Each is a folder of markdown under user/<src>/, rendered
-// to one page per entry plus an index listing. Add a content type by adding a
-// row here — no other code changes. Fields:
-//   src      — folder under user/ to read *.md from
-//   pageDir  — dist/<pageDir>/<slug>.html for each entry page
-//   indexDir — dist/<indexDir>/index.html for the listing page
-//   href     — URL of that listing (also the sidebar nav link)
-//   heading  — listing heading and sidebar nav label
-const COLLECTIONS = [
-  { src: 'posts',    pageDir: 'posts',    indexDir: 'blog',     href: '/blog',     heading: 'Posts' },
-  { src: 'projects', pageDir: 'projects', indexDir: 'projects', href: '/projects', heading: 'Projects' },
-];
-
 // Per-build version, appended to the stylesheet URL to bust browser caching.
 const BUILD = Date.now();
 
-// slug -> entries[], populated in build() before any page renders so the
-// sidebar (shown on every page) can list every collection.
-const entriesBySrc = {};
+// The collections, discovered from user/'s subfolders in build() before any
+// page renders so the sidebar (shown on every page) can list them all. Each is
+// { name, href, heading, entries }.
+let collections = [];
+
+// Folder name → display heading: "natural-language" → "Natural Language".
+function titleCase(name) {
+  return name
+    .split('-')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
 
 // Escape text destined for HTML.
 function esc(s) {
@@ -57,10 +55,10 @@ ${rows}
 // The left sidebar: site title + each collection's directory, expanded into a
 // tree of its contents. Identical on every page.
 function renderSidebar() {
-  const sections = COLLECTIONS.map(c => {
-    const items = (entriesBySrc[c.src] || []).map(e => ({
+  const sections = collections.map(c => {
+    const items = c.entries.map(e => ({
       label: e.title,
-      href: `/${c.pageDir}/${e.slug}.html`,
+      href: `/${c.name}/${e.slug}.html`,
     }));
     return `<a href="${esc(c.href)}" class="nav-link">${esc(c.href)}</a>
 ${renderTree(items)}`;
@@ -142,32 +140,34 @@ ${entry.html}
   return layout({ title: `${entry.title} — ${SITE_TITLE}`, body });
 }
 
-// Home page: redirect to /blog for now (keeps the / route alive).
+// Home page: the root of the file browser — lists the top-level user/ folders,
+// each linking into its collection. Trailing slash signals "directory".
 function renderHome() {
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=/blog">
-<link rel="canonical" href="/blog">
-<title>${esc(SITE_TITLE)}</title>
-</head>
-<body>
-<p>Redirecting to <a href="/blog">/blog</a>…</p>
-</body>
-</html>
-`;
+  const items = collections.map(c =>
+    `<div class="post-preview">
+<a href="${esc(c.href)}">
+<h2>${esc(c.name)}/</h2>
+</a>
+</div>`
+  ).join('\n');
+  const body = `<section class="posts-list">
+<h1>${esc(SITE_TITLE)}</h1>
+<div class="posts-container">
+${items}
+</div>
+</section>`;
+  return layout({ title: SITE_TITLE, body });
 }
 
 // Listing page for any collection: every entry, newest first. Dates are shown
 // when present.
-function renderIndex(collection, entries) {
-  const items = entries.map(e => {
+function renderIndex(collection) {
+  const items = collection.entries.map(e => {
     const time = e.date
       ? `<time datetime="${isoDate(e.date)}">${isoDate(e.date)}</time>`
       : '';
     return `<div class="post-preview">
-<a href="/${collection.pageDir}/${e.slug}.html">
+<a href="/${collection.name}/${e.slug}.html">
 <h2>${esc(e.title)}</h2>
 ${time}
 </a>
@@ -182,10 +182,10 @@ ${items}
   return layout({ title: `${collection.heading} — ${SITE_TITLE}`, body });
 }
 
-// Read user/<src>/*.md into entries, newest first. Date is optional; undated
+// Read user/<name>/*.md into entries, newest first. Date is optional; undated
 // entries keep their file order after any dated ones.
-function loadCollection(src) {
-  const dir = path.join(USER_DIR, src);
+function loadCollection(name) {
+  const dir = path.join(USER_DIR, name);
   const files = fs.existsSync(dir)
     ? fs.readdirSync(dir).filter(f => f.endsWith('.md'))
     : [];
@@ -206,30 +206,45 @@ function loadCollection(src) {
   return entries;
 }
 
+// Every subfolder of user/ is a collection, in alphabetical (file-browser)
+// order. Loose files at user/'s top level (e.g. post-template.md) are ignored —
+// only folders become sections. Hidden dot-folders are skipped.
+function discoverCollections() {
+  if (!fs.existsSync(USER_DIR)) return [];
+  return fs.readdirSync(USER_DIR, { withFileTypes: true })
+    .filter(d => d.isDirectory() && !d.name.startsWith('.'))
+    .map(d => d.name)
+    .sort()
+    .map(name => ({
+      name,
+      href: `/${name}`,
+      heading: titleCase(name),
+      entries: loadCollection(name),
+    }));
+}
+
 function build() {
   // Start from a clean dist/ every time.
   fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(DIST, { recursive: true });
 
-  // Load every collection first so the sidebar can list all of them on any page.
-  for (const c of COLLECTIONS) entriesBySrc[c.src] = loadCollection(c.src);
+  // Discover collections first so the sidebar can list all of them on any page.
+  collections = discoverCollections();
 
   let total = 0;
-  for (const c of COLLECTIONS) {
-    const entries = entriesBySrc[c.src];
-    fs.mkdirSync(path.join(DIST, c.pageDir), { recursive: true });
-    fs.mkdirSync(path.join(DIST, c.indexDir), { recursive: true });
-    for (const entry of entries) {
+  for (const c of collections) {
+    fs.mkdirSync(path.join(DIST, c.name), { recursive: true });
+    for (const entry of c.entries) {
       fs.writeFileSync(
-        path.join(DIST, c.pageDir, `${entry.slug}.html`),
+        path.join(DIST, c.name, `${entry.slug}.html`),
         renderEntry(entry, c),
       );
     }
     fs.writeFileSync(
-      path.join(DIST, c.indexDir, 'index.html'),
-      renderIndex(c, entries),
+      path.join(DIST, c.name, 'index.html'),
+      renderIndex(c),
     );
-    total += entries.length;
+    total += c.entries.length;
   }
 
   fs.writeFileSync(path.join(DIST, 'index.html'), renderHome());
@@ -246,7 +261,7 @@ function build() {
     }, null, 2),
   );
 
-  console.log(`Built ${total} entr${total === 1 ? 'y' : 'ies'} across ${COLLECTIONS.length} collection(s) → dist/`);
+  console.log(`Built ${total} entr${total === 1 ? 'y' : 'ies'} across ${collections.length} collection(s) → dist/`);
 }
 
 build();

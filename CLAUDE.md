@@ -24,35 +24,39 @@ and ask.
 - Host: Cloudflare Pages (build `npm run build`, output `dist/`), auto-deploys on
   push to `main`. Repo: `github.com/whitmank/kwhitman.dev`. Domain: kwhitman.dev.
 
-## Content lives in `user/`
+## The site mirrors `user/` (file-browser metaphor)
 
-All hand-authored content is markdown under `user/`, one folder per
-**collection**: `user/posts/`, `user/projects/`, and any future type. A
-collection is one row in the `COLLECTIONS` array in `build.js` (`src`, `pageDir`,
-`indexDir`, `href`, `heading`) — add a content type by adding a row, no other
-code changes.
+The site is a rendering of the `user/` folder. **Nothing about routing is
+hardcoded** — `build.js` discovers every *subfolder* of `user/` and turns it into
+a **collection** served at `/<folder>`. Today that's `user/blog/` → `/blog` and
+`user/projects/` → `/projects`; drop in `user/notes/` and `/notes` appears with
+no code change. Collections are listed alphabetically (file-browser order).
+
+Loose files at the top level of `user/` (e.g. `post-template.md`) are **ignored**
+— only folders become sections, which is how the template hides while living in
+`user/`.
 
 ## How it's built
 
-`build.js` loads each collection (`loadCollection` reads `user/<src>/*.md`), then
-renders every entry and a per-collection index, writing to `dist/` (gitignored,
-along with `node_modules/`). Templates are inline template-literal functions:
-`layout` (shared shell + sidebar), `renderHome`, `renderEntry` (one page),
-`renderIndex` (one listing). Styling is copied via `style.css → dist/style.css`.
+`build.js` calls `discoverCollections()` (folders of `user/`, alphabetical),
+loads each via `loadCollection` (`user/<name>/*.md`), then renders every entry
+and a per-collection index to `dist/` (gitignored, with `node_modules/`).
+Templates are inline template-literal functions: `layout` (shared shell +
+sidebar), `renderHome`, `renderEntry` (one page), `renderIndex` (one listing).
+`titleCase` turns a folder name into its heading. Styling is copied via
+`style.css → dist/style.css`.
 
-Routes:
-- `/` → redirects to `/blog` (meta refresh in `renderHome`).
-- `/blog` → post list, newest first (the `posts` collection's index).
-- `/posts/<slug>.html` → one page per post.
-- `/projects` → project list (the `projects` collection's index).
-- `/projects/<slug>.html` → one page per project.
+Routes (all derived from folder names):
+- `/` → file-browser root: lists the top-level `user/` folders.
+- `/<folder>` → that collection's index, newest first.
+- `/<folder>/<slug>.html` → one page per markdown file.
 
-## Entries (posts & projects)
+## Entries
 
-`user/<collection>/<slug>.md`; the **filename is the URL slug**. Frontmatter
-needs `title`; `date` (`YYYY-MM-DD`) is optional and drives newest-first sort and
-the displayed date. Undated entries (current projects) omit the date and sort
-last. See `user/post-template.md` for the canonical format.
+`user/<folder>/<slug>.md`; the **filename is the URL slug**. Frontmatter needs
+`title`; `date` (`YYYY-MM-DD`) is optional and drives newest-first sort and the
+displayed date. Undated entries (current projects) omit the date and sort last.
+See `user/post-template.md` for the canonical format.
 
 ## Layout
 
@@ -63,9 +67,14 @@ collapses to a thin left strip with a chevron that slides out on hover/focus
 
 ## Commands
 
-- `npm install` (first time), `npm run build`, preview with `npx serve dist`.
-- **No live reload** — after editing, rebuild and refresh. A common confusion is
-  a stale `dist/`; rebuild before trusting what the browser shows.
+- `npm install` (first time), then `npm run dev` for local work.
+- `npm run dev` runs `dev.js` — a zero-dep dev server (tooling, kept apart from
+  the site): builds `dist/`, serves it at `http://localhost:3000`, and watches
+  `user/`, `style.css`, and `build.js`, rebuilding and live-reloading the browser
+  on any change. `PORT=4321 npm run dev` if 3000 is taken.
+- `npm run build` is the one-off render (what Cloudflare runs); `npx serve dist`
+  serves without rebuild or reload. When previewing a plain `serve`, watch for a
+  stale `dist/` — rebuild before trusting what the browser shows.
 - Publish: `./publish.sh "msg"` (or `npm run publish -- "msg"`) builds, commits,
   and pushes. Karter also has a `publish` shell function scoped to this dir.
 
