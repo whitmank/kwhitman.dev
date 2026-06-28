@@ -12,18 +12,29 @@ const MarkdownIt = require('markdown-it');
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
 const ROOT = __dirname;
-const POSTS_DIR = path.join(ROOT, 'posts');
+const USER_DIR = path.join(ROOT, 'user'); // all hand-authored content lives here
 const DIST = path.join(ROOT, 'dist');
 const SITE_TITLE = 'kwhitman.dev';
 
-// Projects, in display order. Single source for the sidebar tree and /projects.
-const PROJECTS = ['audio-comments', 'text-globe'];
+// Content collections. Each is a folder of markdown under user/<src>/, rendered
+// to one page per entry plus an index listing. Add a content type by adding a
+// row here — no other code changes. Fields:
+//   src      — folder under user/ to read *.md from
+//   pageDir  — dist/<pageDir>/<slug>.html for each entry page
+//   indexDir — dist/<indexDir>/index.html for the listing page
+//   href     — URL of that listing (also the sidebar nav link)
+//   heading  — listing heading and sidebar nav label
+const COLLECTIONS = [
+  { src: 'posts',    pageDir: 'posts',    indexDir: 'blog',     href: '/blog',     heading: 'Posts' },
+  { src: 'projects', pageDir: 'projects', indexDir: 'projects', href: '/projects', heading: 'Projects' },
+];
 
 // Per-build version, appended to the stylesheet URL to bust browser caching.
 const BUILD = Date.now();
 
-// Populated in build(); the sidebar tree under /blog reads from it.
-let allPosts = [];
+// slug -> entries[], populated in build() before any page renders so the
+// sidebar (shown on every page) can list every collection.
+const entriesBySrc = {};
 
 // Escape text destined for HTML.
 function esc(s) {
@@ -43,24 +54,21 @@ ${rows}
 </ul>`;
 }
 
-// The left sidebar: site title + the /blog and /projects directories, each
-// expanded into a tree of its contents. Identical on every page.
+// The left sidebar: site title + each collection's directory, expanded into a
+// tree of its contents. Identical on every page.
 function renderSidebar() {
-  const postItems = allPosts.map(p => ({
-    label: p.title,
-    href: `/posts/${p.slug}.html`,
-  }));
-  const projectItems = PROJECTS.map(name => ({
-    label: name,
-    href: `/projects/${name}.html`,
-  }));
+  const sections = COLLECTIONS.map(c => {
+    const items = (entriesBySrc[c.src] || []).map(e => ({
+      label: e.title,
+      href: `/${c.pageDir}/${e.slug}.html`,
+    }));
+    return `<a href="${esc(c.href)}" class="nav-link">${esc(c.href)}</a>
+${renderTree(items)}`;
+  }).join('\n');
   return `<aside class="sidebar">
 <a href="/" class="site-title">${esc(SITE_TITLE)}</a>
 <nav>
-<a href="/blog" class="nav-link">/blog</a>
-${renderTree(postItems)}
-<a href="/projects" class="nav-link">/projects</a>
-${renderTree(projectItems)}
+${sections}
 </nav>
 </aside>`;
 }
@@ -113,20 +121,25 @@ ${body}
 `;
 }
 
-function renderPost(post) {
+// One entry page for any collection. The date is optional — undated content
+// (e.g. projects) simply omits the <time> line.
+function renderEntry(entry, collection) {
+  const time = entry.date
+    ? `<time datetime="${isoDate(entry.date)}">${isoDate(entry.date)}</time>`
+    : '';
   const body = `<article class="post">
 <header class="post-header">
-<h1>${esc(post.title)}</h1>
-<time datetime="${isoDate(post.date)}">${isoDate(post.date)}</time>
+<h1>${esc(entry.title)}</h1>
+${time}
 </header>
 <div class="post-content">
-${post.html}
+${entry.html}
 </div>
 <footer class="post-footer">
-<a href="/blog">← Back to posts</a>
+<a href="${esc(collection.href)}">← Back to ${esc(collection.heading.toLowerCase())}</a>
 </footer>
 </article>`;
-  return layout({ title: `${post.title} — ${SITE_TITLE}`, body });
+  return layout({ title: `${entry.title} — ${SITE_TITLE}`, body });
 }
 
 // Home page: redirect to /blog for now (keeps the / route alive).
@@ -146,99 +159,80 @@ function renderHome() {
 `;
 }
 
-// Projects index at /projects: lists the projects, each linking to its page.
-function renderProjects() {
-  const items = PROJECTS.map(name =>
-    `<div class="post-preview">
-<a href="/projects/${name}.html">
-<h2>${esc(name)}</h2>
+// Listing page for any collection: every entry, newest first. Dates are shown
+// when present.
+function renderIndex(collection, entries) {
+  const items = entries.map(e => {
+    const time = e.date
+      ? `<time datetime="${isoDate(e.date)}">${isoDate(e.date)}</time>`
+      : '';
+    return `<div class="post-preview">
+<a href="/${collection.pageDir}/${e.slug}.html">
+<h2>${esc(e.title)}</h2>
+${time}
 </a>
-</div>`
-  ).join('\n');
+</div>`;
+  }).join('\n');
   const body = `<section class="posts-list">
-<h1>Projects</h1>
+<h1>${esc(collection.heading)}</h1>
 <div class="posts-container">
 ${items}
 </div>
 </section>`;
-  return layout({ title: `Projects — ${SITE_TITLE}`, body });
+  return layout({ title: `${collection.heading} — ${SITE_TITLE}`, body });
 }
 
-// Individual project page (placeholder content for now).
-function renderProject(name) {
-  const body = `<article class="post">
-<header class="post-header">
-<h1>${esc(name)}</h1>
-</header>
-<div class="post-content">
-<p>coming soon</p>
-</div>
-</article>`;
-  return layout({ title: `${name} — ${SITE_TITLE}`, body });
-}
+// Read user/<src>/*.md into entries, newest first. Date is optional; undated
+// entries keep their file order after any dated ones.
+function loadCollection(src) {
+  const dir = path.join(USER_DIR, src);
+  const files = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter(f => f.endsWith('.md'))
+    : [];
 
-// Blog index at /blog: every post, newest first.
-function renderBlog(posts) {
-  const items = posts.map(p =>
-    `<div class="post-preview">
-<a href="/posts/${p.slug}.html">
-<h2>${esc(p.title)}</h2>
-<time datetime="${isoDate(p.date)}">${isoDate(p.date)}</time>
-</a>
-</div>`
-  ).join('\n');
-  const body = `<section class="posts-list">
-<h1>Posts</h1>
-<div class="posts-container">
-${items}
-</div>
-</section>`;
-  return layout({ title: `Blog — ${SITE_TITLE}`, body });
+  const entries = files.map(file => {
+    const raw = fs.readFileSync(path.join(dir, file), 'utf8');
+    const { data, content } = matter(raw);
+    return {
+      slug: file.replace(/\.md$/, ''),
+      title: data.title || file,
+      date: data.date || null,
+      html: md.render(content),
+    };
+  });
+
+  // Newest first; undated entries (date null → 0) fall to the end.
+  entries.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  return entries;
 }
 
 function build() {
   // Start from a clean dist/ every time.
   fs.rmSync(DIST, { recursive: true, force: true });
-  fs.mkdirSync(path.join(DIST, 'posts'), { recursive: true });
-  fs.mkdirSync(path.join(DIST, 'blog'), { recursive: true });
-  fs.mkdirSync(path.join(DIST, 'projects'), { recursive: true });
+  fs.mkdirSync(DIST, { recursive: true });
 
-  const files = fs.existsSync(POSTS_DIR)
-    ? fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'))
-    : [];
+  // Load every collection first so the sidebar can list all of them on any page.
+  for (const c of COLLECTIONS) entriesBySrc[c.src] = loadCollection(c.src);
 
-  const posts = files.map(file => {
-    const raw = fs.readFileSync(path.join(POSTS_DIR, file), 'utf8');
-    const { data, content } = matter(raw);
-    return {
-      slug: file.replace(/\.md$/, ''),
-      title: data.title || file,
-      date: data.date || new Date(),
-      html: md.render(content),
-    };
-  });
-
-  // Newest first.
-  posts.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  // Make posts available to the sidebar before rendering any page.
-  allPosts = posts;
-
-  for (const post of posts) {
+  let total = 0;
+  for (const c of COLLECTIONS) {
+    const entries = entriesBySrc[c.src];
+    fs.mkdirSync(path.join(DIST, c.pageDir), { recursive: true });
+    fs.mkdirSync(path.join(DIST, c.indexDir), { recursive: true });
+    for (const entry of entries) {
+      fs.writeFileSync(
+        path.join(DIST, c.pageDir, `${entry.slug}.html`),
+        renderEntry(entry, c),
+      );
+    }
     fs.writeFileSync(
-      path.join(DIST, 'posts', `${post.slug}.html`),
-      renderPost(post),
+      path.join(DIST, c.indexDir, 'index.html'),
+      renderIndex(c, entries),
     );
+    total += entries.length;
   }
-  for (const name of PROJECTS) {
-    fs.writeFileSync(
-      path.join(DIST, 'projects', `${name}.html`),
-      renderProject(name),
-    );
-  }
+
   fs.writeFileSync(path.join(DIST, 'index.html'), renderHome());
-  fs.writeFileSync(path.join(DIST, 'blog', 'index.html'), renderBlog(posts));
-  fs.writeFileSync(path.join(DIST, 'projects', 'index.html'), renderProjects());
   fs.copyFileSync(path.join(ROOT, 'style.css'), path.join(DIST, 'style.css'));
 
   // Tell `npx serve` to send no-cache headers so local previews are never
@@ -252,7 +246,7 @@ function build() {
     }, null, 2),
   );
 
-  console.log(`Built ${posts.length} post(s), ${PROJECTS.length} project(s) → dist/`);
+  console.log(`Built ${total} entr${total === 1 ? 'y' : 'ies'} across ${COLLECTIONS.length} collection(s) → dist/`);
 }
 
 build();

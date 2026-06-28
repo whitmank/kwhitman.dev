@@ -11,7 +11,7 @@ npm install        # install build deps (markdown-it, gray-matter)
 ## Develop locally
 
 ```sh
-npm run build      # render posts/*.md into dist/
+npm run build      # render user/**/*.md into dist/
 npx serve dist     # serve dist/ at http://localhost:3000
 ```
 
@@ -21,8 +21,8 @@ own terminal.)
 
 ## Write a post
 
-1. Copy `post-template.md` into `posts/` and rename it to your slug
-   (e.g. `posts/my-post.md` → served at `/posts/my-post.html`).
+1. Copy `user/post-template.md` into `user/posts/` and rename it to your slug
+   (e.g. `user/posts/my-post.md` → served at `/posts/my-post.html`).
 2. Edit the frontmatter (`title`, `date`) and body.
 3. `npm run build` and refresh to preview.
 

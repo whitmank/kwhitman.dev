@@ -24,25 +24,35 @@ and ask.
 - Host: Cloudflare Pages (build `npm run build`, output `dist/`), auto-deploys on
   push to `main`. Repo: `github.com/whitmank/kwhitman.dev`. Domain: kwhitman.dev.
 
+## Content lives in `user/`
+
+All hand-authored content is markdown under `user/`, one folder per
+**collection**: `user/posts/`, `user/projects/`, and any future type. A
+collection is one row in the `COLLECTIONS` array in `build.js` (`src`, `pageDir`,
+`indexDir`, `href`, `heading`) — add a content type by adding a row, no other
+code changes.
+
 ## How it's built
 
-`build.js` reads `posts/*.md`, renders each post, and writes everything to
-`dist/` (gitignored, along with `node_modules/`). Templates are inline
-template-literal functions: `layout` (shared shell + sidebar), `renderHome`,
-`renderBlog`, `renderPost`, `renderProjects`. Styling is copied via
-`style.css → dist/style.css`.
+`build.js` loads each collection (`loadCollection` reads `user/<src>/*.md`), then
+renders every entry and a per-collection index, writing to `dist/` (gitignored,
+along with `node_modules/`). Templates are inline template-literal functions:
+`layout` (shared shell + sidebar), `renderHome`, `renderEntry` (one page),
+`renderIndex` (one listing). Styling is copied via `style.css → dist/style.css`.
 
 Routes:
 - `/` → redirects to `/blog` (meta refresh in `renderHome`).
-- `/blog` → post list, newest first.
+- `/blog` → post list, newest first (the `posts` collection's index).
 - `/posts/<slug>.html` → one page per post.
-- `/projects` → currently a hand-written placeholder list (no links yet).
+- `/projects` → project list (the `projects` collection's index).
+- `/projects/<slug>.html` → one page per project.
 
-## Posts
+## Entries (posts & projects)
 
-`posts/<slug>.md`; the **filename is the URL slug**. Frontmatter needs `title`
-and `date` (`YYYY-MM-DD`, drives sort order). See `post-template.md` for the
-canonical format.
+`user/<collection>/<slug>.md`; the **filename is the URL slug**. Frontmatter
+needs `title`; `date` (`YYYY-MM-DD`) is optional and drives newest-first sort and
+the displayed date. Undated entries (current projects) omit the date and sort
+last. See `user/post-template.md` for the canonical format.
 
 ## Layout
 
@@ -62,5 +72,7 @@ collapses to a thin left strip with a chevron that slides out on hover/focus
 ## Conventions
 
 - Attribute new files: "Authored by Karter with <model>" (user first).
-- Reference docs live at the root: `SPEC.md` (design/decisions),
-  `post-template.md` (post format), `dev.md` (commands).
+- Reference docs live at the root: `SPEC.md` (design/decisions) and `dev.md`
+  (commands). `user/post-template.md` (post/project format) sits in `user/` for
+  convenience; it's at the top level, outside any collection folder, so the build
+  never renders it.

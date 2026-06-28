@@ -16,8 +16,10 @@ above and below. Don't put anything before it.
 
 ## Notes on the rest
 
-- The **filename** becomes the URL slug: `posts/my-first-post.md` is served at
-  `/posts/my-first-post.html`. Keep filenames lowercase with hyphens.
+- The **filename** becomes the URL slug: `user/posts/my-first-post.md` is served
+  at `/posts/my-first-post.html`. Keep filenames lowercase with hyphens.
+  (Projects work the same way under `user/projects/`, served at
+  `/projects/<slug>.html`; for projects the `date` is optional.)
 - The body is plain markdown: headings, **bold**, _italic_, `inline code`,
   [links](https://example.com), lists, blockquotes, and fenced code blocks all
   work.
@@ -27,7 +29,7 @@ above and below. Don't put anything before it.
 console.log("hello");
 ```
 
-To publish: copy this file into `posts/`, rename it, edit the frontmatter and
-body, then `npm run build` (or just commit and push — Cloudflare rebuilds).
+To publish: copy this file into `user/posts/`, rename it, edit the frontmatter
+and body, then `npm run build` (or just commit and push — Cloudflare rebuilds).
 
 <!-- Reference template, not a published post. Authored by Karter with Claude Opus 4.8 -->
