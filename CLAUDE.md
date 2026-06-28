@@ -18,8 +18,9 @@ and ask.
 
 - Hand-rolled static-site generator: `build.js` (Node, CommonJS).
 - Two deps only: `markdown-it` (render) + `gray-matter` (frontmatter).
-- All styling in `style.css` (plain CSS, no framework). No JavaScript ships to
-  the browser — the responsive sidebar is pure CSS.
+- All styling in `style.css` (plain CSS, no framework). The only client-side
+  JavaScript is a ~15-line inline script in `layout()` that toggles the
+  collapsed-sidebar drawer (open/close on click/Escape/resize); nothing else.
 - Host: Cloudflare Pages (build `npm run build`, output `dist/`), auto-deploys on
   push to `main`. Repo: `github.com/whitmank/kwhitman.dev`. Domain: kwhitman.dev.
 

@@ -17,17 +17,31 @@ body {
 }
 
 .layout {
-  display: flex;
-  align-items: stretch;
-  min-height: 100vh;
+  /* One source of truth for the sidebar's size in every state. */
+  --sidebar-width: 15rem;
+  --tab-width: 2rem;
 }
 
+/* The sidebar is the SAME fixed element at every width. Two states only:
+   expanded (the default, and the only state on wide viewports) and collapsed
+   (narrow viewports, see the media query). A wide window is simply the expanded
+   state with the toggle hidden. */
 .sidebar {
-  flex: 0 0 14rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: var(--sidebar-width);
   display: flex;
   flex-direction: column;
-  padding: 2rem 1.5rem;
+  /* The right padding reserves the toggle's width in every state, so content is
+     identical whether the toggle is shown or hidden, and the open toggle (which
+     sits at the right edge) never covers content. */
+  padding: 2rem calc(1.5rem + var(--tab-width)) 2rem 1.5rem;
   border-right: 1px solid #eee;
+  background: #fff;
+  z-index: 10;
+  transition: transform 0.2s ease;
 }
 
 .site-title {
@@ -42,72 +56,151 @@ body {
 .sidebar nav {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
   padding-left: 1.25rem;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .nav-link {
   color: #333;
   text-decoration: none;
-  font-size: 0.95rem;
 }
 
 .nav-link:hover {
   color: #0066cc;
 }
 
-main {
-  flex: 1;
-  min-width: 0;
-  max-width: 50rem;
-  padding: 2rem 3rem;
+/* Space between the /blog group and the /projects group. */
+.sidebar nav .nav-link ~ .nav-link {
+  margin-top: 1rem;
 }
 
-/* Narrow viewports: content goes full-width and the sidebar collapses to a
-   thin strip on the left, sliding out on hover/focus. */
+/* Terminal-style tree. Connectors are drawn in CSS, not box-drawing glyphs, so
+   the left vertical line stays continuous no matter how the rows are spaced.
+   Ticks align to the first text line, so long labels may wrap cleanly. */
+.tree {
+  list-style: none;
+  color: #333;
+}
+
+.tree a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree a:hover {
+  color: #0066cc;
+}
+
+.tree li {
+  position: relative;
+  padding-left: 1.5rem;
+  line-height: 2rem; /* row spacing; first-line center sits at 1rem */
+}
+
+/* Continuous vertical line; the last row stops at its tick to form └. */
+.tree li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid #333;
+}
+
+.tree li:last-child::before {
+  bottom: auto;
+  height: 1rem;
+}
+
+/* Horizontal tick, aligned to the first text line. */
+.tree li::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1rem;
+  width: 0.9rem;
+  border-top: 1px solid #333;
+}
+
+main {
+  margin-left: var(--sidebar-width);
+  max-width: 50rem;
+  padding: 2rem 3rem;
+  transition: margin-left 0.2s ease;
+}
+
+/* The collapsed-sidebar tab is only shown on narrow viewports. */
+.sidebar-tab {
+  display: none;
+}
+
+/* Narrow viewports: the sidebar can collapse. Default is collapsed (off-screen,
+   only the tab rail showing); .layout.open expands it to the identical sidebar
+   shown on wide viewports — so crossing the breakpoint changes nothing but the
+   tab's visibility. */
 @media (max-width: 768px) {
-  .layout {
-    display: block;
+  .sidebar {
+    transform: translateX(-100%); /* collapsed: fully hidden */
   }
 
-  .sidebar {
+  .layout.open .sidebar {
+    transform: translateX(0); /* expanded: identical to the wide layout */
+  }
+
+  /* The toggle. Collapsed: a tab at the left edge (the peeking sidebar edge),
+     chevron pointing right ("open"). It sits above the panel (z-index) so it's
+     always clickable. */
+  .sidebar-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     top: 0;
     left: 0;
+    width: var(--tab-width);
     height: 100%;
-    width: 14rem;
     background: #fff;
-    z-index: 10;
-    transform: translateX(calc(-100% + 2rem));
+    border: none;
+    border-right: 1px solid #eee;
+    cursor: pointer;
+    color: #999;
+    font-size: 1.25rem;
+    z-index: 11;
+    transition: left 0.2s ease;
+  }
+
+  .sidebar-tab .chev {
+    display: inline-block;
     transition: transform 0.2s ease;
   }
 
-  .sidebar:hover,
-  .sidebar:focus-within {
-    transform: translateX(0);
-    box-shadow: 0 0 1.5rem rgba(0, 0, 0, 0.08);
+  /* Expanded: the toggle slides to the sidebar's right edge (in the reserved
+     space, over no content) and its chevron flips to point back ("close"). It
+     keeps its border-right — that edge is the sidebar's divider in this state. */
+  .layout.open .sidebar-tab {
+    left: calc(var(--sidebar-width) - var(--tab-width));
   }
 
-  /* Chevron affordance, visible in the collapsed strip. */
-  .sidebar::after {
-    content: "\203A"; /* › */
-    position: absolute;
-    top: 50%;
-    right: 0.6rem;
-    transform: translateY(-50%);
-    color: #999;
-    font-size: 1.25rem;
+  .layout.open .sidebar-tab .chev {
+    transform: rotate(180deg);
   }
 
-  .sidebar:hover::after,
-  .sidebar:focus-within::after {
-    content: "\2039"; /* ‹ */
-  }
-
+  /* Collapsed: content sits beside the tab rail. Expanded: pushed to the full
+     sidebar width — identical to the wide layout. */
   main {
     max-width: none;
-    width: 100%;
-    padding: 2rem 1.5rem 2rem 3rem;
+    margin-left: var(--tab-width);
+    padding: 2rem 1.5rem;
+  }
+
+  .layout.open main {
+    margin-left: var(--sidebar-width);
   }
 }
 
