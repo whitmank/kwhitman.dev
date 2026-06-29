@@ -140,21 +140,10 @@ ${entry.html}
   return layout({ title: `${entry.title} — ${SITE_TITLE}`, body });
 }
 
-// Home page: the root of the file browser — lists the top-level user/ folders,
-// each linking into its collection. Trailing slash signals "directory".
+// Home page: just a big hello. Navigation lives in the sidebar.
 function renderHome() {
-  const items = collections.map(c =>
-    `<div class="post-preview">
-<a href="${esc(c.href)}">
-<h2>${esc(c.name)}/</h2>
-</a>
-</div>`
-  ).join('\n');
-  const body = `<section class="posts-list">
-<h1>${esc(SITE_TITLE)}</h1>
-<div class="posts-container">
-${items}
-</div>
+  const body = `<section class="home">
+<h1 class="home-hello">hello</h1>
 </section>`;
   return layout({ title: SITE_TITLE, body });
 }

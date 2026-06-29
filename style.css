@@ -204,6 +204,20 @@ main {
   }
 }
 
+/* Home page */
+.home {
+  display: flex;
+  min-height: 70vh;
+  align-items: center;
+}
+
+.home-hello {
+  font-size: clamp(4rem, 18vw, 12rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
 /* Posts list */
 .posts-list h1 {
   margin-bottom: 2rem;
