@@ -7,12 +7,17 @@
   "scripts": {
     "build": "node build.js",
     "dev": "node dev.js",
-    "publish": "sh publish.sh"
+    "publish": "sh publish.sh",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "author": "Karter (with Claude Opus 4.8)",
   "license": "MIT",
   "dependencies": {
     "gray-matter": "^4.0.3",
     "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.105.0"
   }
 }
